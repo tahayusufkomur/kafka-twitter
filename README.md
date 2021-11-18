@@ -24,7 +24,7 @@ String tokenSecret = "***********";
 - com.github.kafka.twitter
 - new class under the package "TwitterProducer"
 - 
-1- Creating Kafka Client
+2- Creating Kafka Producer
 
 -  Add Dependencies
 	- go to https://mvnrepository.com/artifact/org.apache.kafka
