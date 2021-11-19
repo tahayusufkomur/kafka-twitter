@@ -24,12 +24,14 @@ import java.util.concurrent.TimeUnit;
 public class TwitterProducer {
 
     Logger logger = LoggerFactory.getLogger(TwitterProducer.class.getName());
+
+    // Twitter authentication variables
     String consumerKey = "C7LuQgbAGQVriui7a3v40CuLk";
     String consumerSecret = "6U1iAq4ve9qyjRzAoXa5T2xYoNx4Q9Lsb9DQw2J1ZfM4fbHL0V";
     String token = "1086409737657348097-yPxKaLczOA8hkGSA1ONWxHOuBNOrQy";
     String tokenSecret = "ViVutgRpxgvZHAHHOa7TS8Tvye5q3eh3F0MpHFymG2lnq";
 
-    List<String> terms = Lists.newArrayList("dolar", "tl");
+    List<String> terms = Lists.newArrayList("tayyip");
 
     public static void main(String[] args) {
         new TwitterProducer().run();
@@ -77,7 +79,7 @@ public class TwitterProducer {
             if (msg != null)
             {
                 logger.info(msg);
-                producer.send(new ProducerRecord<>("twitter_topic", null, msg), new Callback() {
+                producer.send(new ProducerRecord<>("twitter_topic", null, '\n'+msg), new Callback() {
                     @Override
                     public void onCompletion(RecordMetadata recordMetadata, Exception e) {
                         if (e != null)
@@ -100,7 +102,6 @@ public class TwitterProducer {
         StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
         // Optional: set up some followings and track terms
         //List<Long> followings = Lists.newArrayList(1234L, 566788L);
-        List<String> terms = Lists.newArrayList("dolar", "tl");
         //hosebirdEndpoint.followings(followings);
         hosebirdEndpoint.trackTerms(terms);
 
@@ -130,6 +131,14 @@ public class TwitterProducer {
         properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+
+        // create safe producer
+
+        properties.setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true");
+        properties.setProperty(ProducerConfig.ACKS_CONFIG,"all");
+        properties.setProperty(ProducerConfig.RETRIES_CONFIG, Integer.toString(Integer.MAX_VALUE));
+        properties.setProperty(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION,"5");
 
         KafkaProducer<String,String> producer = new KafkaProducer<String, String>(properties);
 
