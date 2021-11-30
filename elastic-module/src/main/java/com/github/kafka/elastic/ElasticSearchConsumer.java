@@ -1,5 +1,6 @@
 package com.github.kafka.elastic;
 
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -72,6 +73,17 @@ public class ElasticSearchConsumer {
         return client;
     }
 
+    // To extraxt id_str from twitter tweets
+    private static JsonParser jsonParser = new JsonParser();
+    public static String extractIdFromTweet(String tweetJson)
+    {
+        // gson library
+     return jsonParser.parse(tweetJson)
+                .getAsJsonObject()
+                .get("id_str")
+                .getAsString();
+    }
+
     public static void main(String[] args) throws IOException {
 
         RestHighLevelClient client = createClient();
@@ -85,15 +97,24 @@ public class ElasticSearchConsumer {
             ConsumerRecords<String, String> records =
                     consumer.poll(Duration.ofMillis(100));
             for (ConsumerRecord<String, String> record : records) {
+
+                // 2 strategies to create an id
+                // 1- kafka generic ID
+                //String id = record.topic() + "-" + record.partition() + "-" + record.offset();
+                // 2- Twitter tweet id, we will implement this
+                String id = extractIdFromTweet(record.value());
+                //System.out.println(id);
+
                 // where we insert data into elasticsearch
                 IndexRequest indexRequest = new IndexRequest(
                         "twitter",
-                        "tweets"
+                        "tweets",
+                        id // to make our consumer idempotent
                 ).source(record.value(), XContentType.JSON);
 
                 IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
-                String id = indexResponse.getId();
-                logger.info(id);
+
+                logger.info(indexResponse.getId());
 
                 try {
                     Thread.sleep(1000);
